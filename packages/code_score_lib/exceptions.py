@@ -1,0 +1,2 @@
+class SkipBenchmark(Exception):
+    pass
