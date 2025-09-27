@@ -1,3 +1,10 @@
 black==25.9.0
 pydantic
 dspy
+-e git+https://github.com/EleutherAI/lm-evaluation-harness.git#egg=lm-eval
+fastapi==0.115.2
+uvicorn[standard]==0.30.6
+Jinja2==3.1.4
+python-multipart==0.0.9
+pydantic-settings==2.10.1
+pipenv

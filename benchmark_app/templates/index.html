@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>LLM Benchmark Dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/static/app.css" />
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <div>
+                <h1>LLM Benchmark Dashboard</h1>
+                <p class="muted">View results. Contact Sarah to run new benchmarks.</p>
+            </div>
+            <div class="status">
+                <span class="meta">Last updated: {{ last_updated }}</span>
+                <a class="btn ghost" href="/api/results.csv" download>Download CSV</a>
+                <a class="btn ghost" href="{{ open_source_url }}" target="_blank" rel="noopener">Open Source</a>
+            </div>
+        </header>
+
+        <section class="card controls" title="ask them to conttact Sarah to run it and server the models and run it">
+            <button id="runBtn" class="btn primary" disabled
+                title="ask them to conttact Sarah to run it and server the models and run it">▶ Run Benchmark</button>
+            <div id="toast" class="toast" hidden></div>
+        </section>
+
+        {% if not has_data %}
+        <section class="card empty">
+            <p>No results yet. Upload a spec JSON and click <strong>Run Benchmark</strong>.</p>
+        </section>
+        {% else %}
+        <section class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            {% for h in headers %}
+                            <th title="{{ h }}">{{ h }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            {% for cell in row %}
+                            <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="card">
+            <h3>Score Methodology</h3>
+            <ul class="bullets small">
+                <li><strong>Frontend (LLM-judge)</strong>: Weights — Functionality 40%, Code quality 25%, Accessibility
+                    15%, Error handling 10%, Performance 10%. Example: 10·0.40 + 9·0.25 + 10·0.15 + 10·0.10 + 8·0.10 =
+                    9.55 → 96/100.</li>
+                <li><strong>Integration Tests (LLM-judge)</strong>: Weights — Functionality 40%, Code quality 20%,
+                    Performance 20%, Error handling 15%, Accessibility 5%. Example: 10·0.40 + 9·0.20 + 8·0.20 + 10·0.15
+                    + 7·0.05 = 9.25 → 93/100.</li>
+                <li><strong>Backend (BaxBench)</strong>: Normalized BaxBench composite (functionality, DB ops, auth) to
+                    0–100.</li>
+                <li><strong>Unit Tests (TestEval)</strong>: Normalize pass metrics (e.g., pass@1) to 0–100.</li>
+                <li><strong>Codegen (HumanEval/MBPP)</strong>: Average pass@1 across suites → 0–100.</li>
+                <li><strong>Performance</strong>: Lower latency & runtime → higher normalized score (0–100).</li>
+                <li><strong>Overall</strong>: Arithmetic mean of available numeric columns (Frontend, Integration Tests,
+                    Backend, Unit Tests, Codegen, Performance). Missing values are excluded; shown with 1 decimal.</li>
+            </ul>
+        </section>
+    </div>
+</body>
+
+</html>
