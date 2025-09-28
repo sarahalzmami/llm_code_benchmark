@@ -1,4 +1,4 @@
-Rank,Model,Frontend (LLM-judge),Integration Tests (LLM-judge),Backend (BaxBench),Unit Tests (LLM-judge),Codegen (HumanEval/MBPP),Performance,Overall
-1,mistral_benchmarks,101,88,,88,,95.0,89.5
-2,llama3.2_benchmarks,87,,,,,90.0,88.5
-,phi_benchmarks,01,88,,88,,95.0,89.5
+Rank,Model,Frontend (LLM-judge),Integration Tests (LLM-judge),End-to-End Tests (LLM-judge),Backend (BaxBench),Unit Tests (LLM-judge),Mock Data (LLM-judge),Performance,Overall
+1,mistral_benchmarks,82,82,77,80.0,72,90,65.0,78.3
+2,qwen2.5_coder_benchmarks,74,82,72,80.0,67,57,65.0,71.0
+3,codellama_benchmarks,82,79,,80.0,69,53,55.0,69.7
