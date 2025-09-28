@@ -92,7 +92,9 @@ def _derive_row(
 
     front = load("frontend")
     integ = load("integration_test")
+    e2e = load("end_to_end_test")
     unit = load("unit_test")
+    mock = load("mock_data_generation")
     lm = load("lm_eval")
     index_obj = _load_json(mdir / "index.json")
     bax = load("baxbench")
@@ -117,18 +119,38 @@ def _derive_row(
         "performance": 0.20,
         "error_handling": 0.10,
     }
+    e2e_w = {
+        "functionality": 0.40,
+        "code_quality": 0.20,
+        "performance": 0.20,
+        "error_handling": 0.15,
+        "accessibility": 0.05,
+    }
+    mock_w = {
+        "realism": 1.0,
+        "diversity": 1.0,
+        "privacy": 1.0,
+    }
     f_val = weighted_llm_judge_score(front, front_w) if front is not None else None
     i_val = weighted_llm_judge_score(integ, integ_w) if integ is not None else None
+    e2e_val = weighted_llm_judge_score(e2e, e2e_w) if e2e is not None else None
     u_val = weighted_llm_judge_score(unit, unit_w) if unit is not None else None
+    mock_val = weighted_llm_judge_score(mock, mock_w) if mock is not None else None
     row["Frontend (LLM-judge)"] = (
         round(f_val) if isinstance(f_val, (int, float)) else None
     )
     row["Integration Tests (LLM-judge)"] = (
         round(i_val) if isinstance(i_val, (int, float)) else None
     )
+    row["End-to-End Tests (LLM-judge)"] = (
+        round(e2e_val) if isinstance(e2e_val, (int, float)) else None
+    )
     row["Backend (BaxBench)"] = baxbench_score(index_obj, bax)
     row["Unit Tests (LLM-judge)"] = (
         round(u_val) if isinstance(u_val, (int, float)) else None
+    )
+    row["Mock Data (LLM-judge)"] = (
+        round(mock_val) if isinstance(mock_val, (int, float)) else None
     )
     row["Codegen (HumanEval/MBPP)"] = codegen_score_from_lm_eval(lm)
     row["Performance"] = performance_score(front, integ)
@@ -137,8 +159,10 @@ def _derive_row(
         for c in (
             "Frontend (LLM-judge)",
             "Integration Tests (LLM-judge)",
+            "End-to-End Tests (LLM-judge)",
             "Backend (BaxBench)",
             "Unit Tests (LLM-judge)",
+            "Mock Data (LLM-judge)",
             "Codegen (HumanEval/MBPP)",
             "Performance",
         )
@@ -173,8 +197,10 @@ def _write_leaderboard(out_dir: Path, rows: List[Dict[str, Any]]) -> Path:
         "Model",
         "Frontend (LLM-judge)",
         "Integration Tests (LLM-judge)",
+        "End-to-End Tests (LLM-judge)",
         "Backend (BaxBench)",
         "Unit Tests (LLM-judge)",
+        "Mock Data (LLM-judge)",
         "Codegen (HumanEval/MBPP)",
         "Performance",
         "Overall",
