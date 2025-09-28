@@ -14,7 +14,7 @@ app.mount(
 )
 templates = Jinja2Templates(directory=str(rel(settings.templates_dir)))
 
-_results = ResultsService(rel(settings.results_root))
+_results = ResultsService(settings.results_path)
 
 
 @app.get("/", response_class=HTMLResponse)

@@ -1,65 +1,35 @@
 import csv
-import json
 from pathlib import Path
 from typing import Optional, Tuple, List
 
 
 class ResultsService:
-    """Encapsulates discovery and loading of benchmark results.
+    """Load benchmark results from a CSV path or packaged default.
 
-    - Resolves the latest CSV via latest.json manifest or newest runs/<id>.
-    - Provides helpers to read CSV rows and expose last-updated time.
+    - If ``results_path`` is provided and points to a file, that CSV is used.
+    - Otherwise, falls back to ``benchmark_app/data/leaderboard.csv``.
     """
 
-    def __init__(self, results_root: Path | str) -> None:
-        root = Path(results_root)
-        self.root: Path = root.resolve()
-        self.manifest_path: Path = self.root / "latest.json"
-        self.runs_dir: Path = self.root / "runs"
+    def __init__(self, results_path: Optional[Path | str] = None) -> None:
+        app_root = Path(__file__).resolve().parent.parent
+        default_csv = (app_root / "data" / "leaderboard.csv").resolve()
 
-    def latest_manifest(self) -> dict:
-        try:
-            if self.manifest_path.exists():
-                return json.loads(self.manifest_path.read_text(encoding="utf-8")) or {}
-        except Exception as e:
-            raise Exception(e)
+        chosen: Optional[Path] = None
+        if results_path:
+            p = Path(results_path)
+            if not p.is_absolute():
+                p = (app_root / p).resolve()
+            try:
+                p = p.resolve()
+            except Exception:
+                pass
+            if p.exists() and p.is_file():
+                chosen = p
 
-    def _resolve_csv_from_manifest(self, manifest: dict) -> Optional[Path]:
-        csv_path_val = manifest.get("csv") if isinstance(manifest, dict) else None
-        if not csv_path_val:
-            return None
-        p = Path(str(csv_path_val))
-        if not p.is_absolute():
-            p = self.root / p
-        try:
-            p = p.resolve()
-        except Exception:
-            pass
-        return p if p.exists() else None
+        self.csv_path: Path = chosen or default_csv
 
     def find_latest_csv(self) -> Optional[Path]:
-        # 1) Look at manifest
-        p = self._resolve_csv_from_manifest(self.latest_manifest())
-        if p:
-            return p
-        # 2) Fall back to newest run folder
-        try:
-            if self.runs_dir.exists():
-                runs = sorted(
-                    [d for d in self.runs_dir.iterdir() if d.is_dir()],
-                    key=lambda d: d.name,
-                    reverse=True,
-                )
-                for d in runs:
-                    preferred = d / f"{d.name}.csv"
-                    if preferred.exists():
-                        return preferred
-                    any_csv = next((pp for pp in d.glob("*.csv")), None)
-                    if any_csv and any_csv.exists():
-                        return any_csv
-        except Exception:
-            pass
-        return None
+        return self.csv_path if self.csv_path.exists() else None
 
     def read_results(
         self, max_rows: Optional[int] = 500
