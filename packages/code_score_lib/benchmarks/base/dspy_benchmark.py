@@ -77,12 +77,36 @@ class DspyBenchmark(Benchmark):
         with dspy.context(lm=dspy.LM(**self._judge_llm_params)):
             judge = dspy.ChainOfThought(CodeJudgeSignature)
 
+            # Build a rubric that reflects likely metrics for this task.
+            # Default criteria suitable for code/test tasks:
+            default_criteria = [
+                "functionality",
+                "code_quality",
+                "performance",
+                "accessibility",
+                "error_handling",
+            ]
+            # If the prompt suggests realism/diversity/privacy (e.g., mock data tasks), include them.
+            prompt_l = task.evaluation_prompt.lower()
+            extra_criteria = [
+                k for k in ["realism", "diversity", "privacy"] if k in prompt_l
+            ]
+            # Allow both sets so the judge returns whichever are applicable.
+            all_criteria = default_criteria + [
+                c for c in extra_criteria if c not in default_criteria
+            ]
+
+            criteria_list = (
+                ", ".join(all_criteria + ["realism", "diversity", "privacy"])
+                if not extra_criteria
+                else ", ".join(all_criteria)
+            )
+
             rubric = (
                 task.evaluation_prompt
-                + "\nReturn your assessment as a JSON object with keys for each criterion "
-                + "(e.g. functionality, code_quality, performance, accessibility, error_handling) and "
-                + "values as integers between 0 and 10. Include a brief justification for each score "
-                + "under a 'justification' field."
+                + "\nReturn your assessment as a JSON object with integer scores (0–10) for each applicable criterion "
+                + f"from: {criteria_list}. "
+                + "Include a brief justification for each score under a 'justification' field."
             )
             prediction = judge(
                 description=task.description,
@@ -91,7 +115,12 @@ class DspyBenchmark(Benchmark):
             )
 
         try:
-            parsed: JsonValue = json.loads(prediction.result_json)
+            parsed: JsonValue = json.loads(
+                prediction.result_json.strip()
+                .removeprefix("```json")
+                .removesuffix("```")
+                .strip()
+            )
         except json.JSONDecodeError:
             return {"raw": prediction.result_json}
 
