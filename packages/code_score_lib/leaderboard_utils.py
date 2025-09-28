@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 
 from .scoring_utils import (
     weighted_llm_judge_score,
-    codegen_score_from_lm_eval,
     baxbench_score,
     performance_score,
 )
@@ -95,7 +94,6 @@ def _derive_row(
     e2e = load("end_to_end_test")
     unit = load("unit_test")
     mock = load("mock_data_generation")
-    lm = load("lm_eval")
     index_obj = _load_json(mdir / "index.json")
     bax = load("baxbench")
     row: Dict[str, Any] = {"Model": model_name or ""}
@@ -152,7 +150,6 @@ def _derive_row(
     row["Mock Data (LLM-judge)"] = (
         round(mock_val) if isinstance(mock_val, (int, float)) else None
     )
-    row["Codegen (HumanEval/MBPP)"] = codegen_score_from_lm_eval(lm)
     row["Performance"] = performance_score(front, integ)
     numeric = [
         row[c]
@@ -163,7 +160,6 @@ def _derive_row(
             "Backend (BaxBench)",
             "Unit Tests (LLM-judge)",
             "Mock Data (LLM-judge)",
-            "Codegen (HumanEval/MBPP)",
             "Performance",
         )
         if isinstance(row.get(c), (int, float))
@@ -201,7 +197,6 @@ def _write_leaderboard(out_dir: Path, rows: List[Dict[str, Any]]) -> Path:
         "Backend (BaxBench)",
         "Unit Tests (LLM-judge)",
         "Mock Data (LLM-judge)",
-        "Codegen (HumanEval/MBPP)",
         "Performance",
         "Overall",
     ]
@@ -255,9 +250,7 @@ def auto_run(results_root: Optional[os.PathLike | str] = None) -> Dict[str, Any]
                 name = None
         if not name:
             name = os.environ.get("CODE_SCORE_MODEL_NAME")
-        if not name:
-            lm_obj = _load_json(mdir / "lm_eval.json")
-            name = _parse_lm_model(lm_obj) or None
+        # Do not rely on lm_eval.json for naming to avoid lm_eval dependency
         if not name and not single_dir_mode:
             name = mdir.name
         rows.append(_derive_row(mdir, name, repo_base))

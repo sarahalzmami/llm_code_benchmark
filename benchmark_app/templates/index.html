@@ -68,11 +68,10 @@
                     + 7·0.05 = 9.25 → 93/100.</li>
                 <li><strong>Backend (BaxBench)</strong>: Normalized BaxBench composite (functionality, DB ops, auth) to
                     0–100.</li>
-                <li><strong>Unit Tests (TestEval)</strong>: Normalize pass metrics (e.g., pass@1) to 0–100.</li>
-                <li><strong>Codegen (HumanEval/MBPP)</strong>: Average pass@1 across suites → 0–100.</li>
+                <li><strong>Unit Tests (TestEval)</strong>: Normalize pass metrics to 0–100.</li>
                 <li><strong>Performance</strong>: Lower latency & runtime → higher normalized score (0–100).</li>
                 <li><strong>Overall</strong>: Arithmetic mean of available numeric columns (Frontend, Integration Tests,
-                    Backend, Unit Tests, Codegen, Performance). Missing values are excluded; shown with 1 decimal.</li>
+                    Backend, Unit Tests, Performance). Missing values are excluded; shown with 1 decimal.</li>
             </ul>
         </section>
     </div>
