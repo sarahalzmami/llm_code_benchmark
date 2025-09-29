@@ -7,7 +7,6 @@ class ResultsService:
     """Load benchmark results from a CSV path or packaged default.
 
     - If ``results_path`` is provided and points to a file, that CSV is used.
-    - Otherwise, falls back to ``benchmark_app/data/leaderboard.csv``.
     """
 
     def __init__(self, results_path: Optional[Path | str] = None) -> None:
