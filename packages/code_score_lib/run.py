@@ -353,3 +353,15 @@ class BenchmarkRunner:
 
 def run(config_root_directory: str) -> None:
     BenchmarkRunner().run_configs_in(config_root_directory)
+
+
+if __name__ == "__main__":
+    import sys
+
+    cfg_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    try:
+        repo_root = Path(__file__).resolve().parents[2]
+    except Exception as e:
+        raise Exception(e)
+    cfg_dir = repo_root / cfg_arg
+    run(cfg_dir)
