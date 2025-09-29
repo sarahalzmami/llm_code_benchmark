@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterable
 
 
 def _norm_key(k: str) -> str:
@@ -43,56 +43,6 @@ def weighted_llm_judge_score(obj: Any, weights: Dict[str, float]) -> Optional[fl
     return None if not per_record else sum(per_record) / len(per_record)
 
 
-def codegen_score_from_lm_eval(obj: Any) -> Optional[float]:
-    """
-    Compute a code generation score from an lm_eval result JSON. Extracts pass@1
-    metrics and averages them on a 0–100 scale. Returns None if no appropriate
-    metrics are found.
-    """
-    if not obj or not isinstance(obj, dict):
-        return None
-    results = obj.get("results", {})
-    if not isinstance(results, dict) or not results:
-        return None
-    task_scores: List[float] = []
-    for task_blob in results.values():
-        if not isinstance(task_blob, dict):
-            continue
-        for key, val in task_blob.items():
-            if not isinstance(val, (int, float)):
-                continue
-            key_l = str(key).lower()
-            if any(sub in key_l for sub in ("pass@1", "pass_at_1", "pass@k")):
-                task_scores.append(float(val) * 100.0)
-                break
-    return None if not task_scores else sum(task_scores) / len(task_scores)
-
-
-def unit_tests_score_from_test_results(obj: Any) -> Optional[float]:
-    """
-    Compute a simple pass rate for unit tests based on the number of passed and total tests.
-    Returns None if no totals are provided.
-    """
-    if not obj or not isinstance(obj, dict):
-        return None
-    ft_passed = obj.get("num_passed_ft")
-    ft_total = obj.get("num_total_ft")
-    st_total = obj.get("num_total_st")
-    st_ex = obj.get("num_st_exceptions")
-    if ft_total is None and st_total is None:
-        return None
-    total = passed = 0
-    if isinstance(ft_total, int) and ft_total >= 0:
-        total += ft_total
-        if isinstance(ft_passed, int):
-            passed += max(0, min(ft_passed, ft_total))
-    if isinstance(st_total, int) and st_total >= 0:
-        total += st_total
-        if isinstance(st_ex, int):
-            passed += max(0, st_total - st_ex)
-    return None if total == 0 else (passed / total) * 100.0
-
-
 def baxbench_score(index_obj: Any, bax_obj: Any) -> Optional[float]:
     """
     Compute a backend score from BaxBench outputs. If numeric values are present,
@@ -103,27 +53,79 @@ def baxbench_score(index_obj: Any, bax_obj: Any) -> Optional[float]:
         if numeric_vals:
             avg = sum(numeric_vals) / len(numeric_vals)
             return avg * 100.0 if 0.0 <= avg <= 1.0 else min(100.0, max(0.0, avg))
-    if isinstance(index_obj, dict) and isinstance(index_obj.get("results"), list):
-        for item in index_obj["results"]:
-            try:
-                if item.get("name") == "baxbench":
-                    return 80.0 if item.get("status") == "success" else None
-            except Exception:
-                continue
     return None
 
 
-def performance_score(front_eval_obj: Any, integ_eval_obj: Any) -> Optional[float]:
+def _iter_eval_blocks(*objs: Any) -> Iterable[Dict[str, float]]:
+    """Yield normalized evaluation dicts from result objects.
+
+    - Accepts dicts or lists of dicts; looks for an `evaluation` field.
+    - Normalizes keys via `_norm_key` and filters to numeric values.
     """
-    Average the 'performance' subscores from frontend and integration evaluations and scale to 0–100.
-    """
-    perf_vals: List[float] = []
-    for obj in (front_eval_obj, integ_eval_obj):
+    for obj in objs:
         if not obj:
             continue
         records = obj if isinstance(obj, list) else [obj]
         for rec in records:
-            ev = rec.get("evaluation") if isinstance(rec, dict) else None
-            if isinstance(ev, dict) and isinstance(ev.get("performance"), (int, float)):
-                perf_vals.append(float(ev["performance"]))
-    return None if not perf_vals else (sum(perf_vals) / len(perf_vals)) * 10.0
+            eval_block = rec.get("evaluation") if isinstance(rec, dict) else None
+            if not isinstance(eval_block, dict):
+                continue
+            out: Dict[str, float] = {}
+            for k, v in eval_block.items():
+                if isinstance(v, (int, float)):
+                    out[_norm_key(k)] = float(v)
+            if out:
+                yield out
+
+
+def performance_score(*objs: Any) -> Optional[float]:
+    """
+    Derive a 0–100 performance score from latency/runtime signals in evaluation blocks.
+
+    Heuristics:
+    - Prefer raw timing signals (ms/s): keys containing `latency`, `response_time`,
+      `render_time`, `runtime`, `duration`, `ttfb`.
+    - Normalize units: `*_ms` -> ms, `*_s` -> seconds; unknown units treated as ms if
+      value > 50 else seconds if <= 50, then converted to ms.
+    - Aggregate by averaging all found timings across provided objects.
+    - Map ms -> score with linear scale where 100ms => 100 and 3000ms => 0, clamped.
+    - Fallback: use `performance` subscore (0–10) scaled to 0–100 if no timings.
+    """
+    evals = list(_iter_eval_blocks(*objs))
+    timings_ms: List[float] = []
+
+    def to_ms(key: str, val: float) -> float:
+        k = key.lower()
+        # Direct unit hints
+        if k.endswith("_ms") or "milliseconds" in k or k.endswith("ms"):
+            return float(val)
+        if k.endswith("_s") or k.endswith("_sec") or "seconds" in k or k.endswith("s"):
+            return float(val) * 1000.0
+        # Heuristic: values <= 50 are likely seconds (e.g., 0.2, 1.5, 10.0)
+        return float(val) * (1000.0 if val <= 50 else 1.0)
+
+    PERF_KEYS = (
+        "latency",
+        "response_time",
+        "render_time",
+        "runtime",
+        "duration",
+        "ttfb",
+        "time_to_interactive",
+    )
+    for ev in evals:
+        for k, v in ev.items():
+            if any(pk in k for pk in PERF_KEYS):
+                timings_ms.append(to_ms(k, v))
+
+    if timings_ms:
+        avg_ms = sum(timings_ms) / len(timings_ms)
+        # Linear mapping: 100ms => 100, 3000ms => 0
+        FAST_MS = 100.0
+        SLOW_MS = 3000.0
+        if avg_ms <= FAST_MS:
+            return 100.0
+        if avg_ms >= SLOW_MS:
+            return 0.0
+        score = 100.0 * (SLOW_MS - avg_ms) / (SLOW_MS - FAST_MS)
+        return round(max(0.0, min(100.0, score)))

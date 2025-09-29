@@ -13,37 +13,10 @@ from .scoring_utils import (
 
 def _load_json(path: Path) -> Optional[Any]:
     """Safely load a JSON file from disk, returning None if reading fails."""
-    if not path or not path.is_file():
-        return None
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
-
-
-def _parse_lm_model(obj: Any) -> Optional[str]:
-    """
-    Extract a model identifier from an lm_eval.json object. Looks for
-    metadata.model in per‑task configs and falls back to the model_args
-    string. Returns None if no name can be inferred.
-    """
-    cfgs = obj.get("configs")
-    if isinstance(cfgs, dict):
-        for v in cfgs.values():
-            if isinstance(v, dict):
-                m = v.get("metadata", {}).get("model")
-                if isinstance(m, str) and m.strip():
-                    return m.strip()
-    cfg = obj.get("config")
-    if isinstance(cfg, dict):
-        ma = cfg.get("model_args")
-        if isinstance(ma, str) and "model=" in ma:
-            try:
-                frag = ma.split("model=", 1)[1]
-                return frag.split(",", 1)[0].strip()
-            except Exception:
-                pass
-    return None
 
 
 def _run_id_from_index(root: Path) -> Optional[str]:
@@ -96,30 +69,35 @@ def _derive_row(
     mock = load("mock_data_generation")
     index_obj = _load_json(mdir / "index.json")
     bax = load("baxbench")
+
     row: Dict[str, Any] = {"Model": model_name or ""}
     front_w = {
-        "functionality": 0.40,
-        "code_quality": 0.25,
+        "functionality": 0.35,
+        "code_quality": 0.20,
+        "security": 0.10,
         "accessibility": 0.15,
         "error_handling": 0.10,
         "performance": 0.10,
     }
     integ_w = {
-        "functionality": 0.40,
-        "code_quality": 0.20,
+        "functionality": 0.35,
+        "code_quality": 0.15,
+        "security": 0.10,
         "performance": 0.20,
         "error_handling": 0.15,
         "accessibility": 0.05,
     }
     unit_w = {
-        "functionality": 0.40,
-        "code_quality": 0.30,
+        "functionality": 0.35,
+        "code_quality": 0.25,
+        "security": 0.10,
         "performance": 0.20,
         "error_handling": 0.10,
     }
     e2e_w = {
-        "functionality": 0.40,
-        "code_quality": 0.20,
+        "functionality": 0.35,
+        "code_quality": 0.15,
+        "security": 0.10,
         "performance": 0.20,
         "error_handling": 0.15,
         "accessibility": 0.05,
@@ -134,6 +112,7 @@ def _derive_row(
     e2e_val = weighted_llm_judge_score(e2e, e2e_w) if e2e is not None else None
     u_val = weighted_llm_judge_score(unit, unit_w) if unit is not None else None
     mock_val = weighted_llm_judge_score(mock, mock_w) if mock is not None else None
+
     row["Frontend (LLM-judge)"] = (
         round(f_val) if isinstance(f_val, (int, float)) else None
     )
@@ -151,6 +130,7 @@ def _derive_row(
         round(mock_val) if isinstance(mock_val, (int, float)) else None
     )
     row["Performance"] = performance_score(front, integ)
+
     numeric = [
         row[c]
         for c in (
@@ -212,23 +192,11 @@ def _write_leaderboard(out_dir: Path, rows: List[Dict[str, Any]]) -> Path:
 
 def auto_run(results_root: Optional[os.PathLike | str] = None) -> Dict[str, Any]:
     """
-    Entry point for generating a leaderboard from a results directory. If
-    results_root is None, attempts to locate a suitable directory under the
-    repository base. Returns a dict summarizing status and output locations.
+    Entry point for generating a leaderboard from a results directory.
+    Returns a dict summarizing status and output locations.
     """
     repo_base = Path(__file__).resolve().parent.parent
     root = Path(results_root) if results_root else None
-    if not root:
-        for rel_path in (
-            "benchmark_app/results/derived",
-            "results/derived",
-            "benchmark_app/results",
-            "results",
-        ):
-            candidate = repo_base / rel_path
-            if candidate.exists():
-                root = candidate
-                break
     if not root:
         return {"status": "no_results_dir"}
     root = root.resolve()
@@ -248,9 +216,6 @@ def auto_run(results_root: Optional[os.PathLike | str] = None) -> Dict[str, Any]
                 name = marker.read_text(encoding="utf-8").strip() or None
             except Exception:
                 name = None
-        if not name:
-            name = os.environ.get("CODE_SCORE_MODEL_NAME")
-        # Do not rely on lm_eval.json for naming to avoid lm_eval dependency
         if not name and not single_dir_mode:
             name = mdir.name
         rows.append(_derive_row(mdir, name, repo_base))
