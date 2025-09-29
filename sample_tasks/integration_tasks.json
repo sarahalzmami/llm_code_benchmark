@@ -1,0 +1,8 @@
+[
+  {
+    "name": "graphql_api_integration",
+    "description": "Write integration tests for a GraphQL API implemented with Apollo Server. The API includes a query users that returns a list of users and a mutation createUser(name: String!) that inserts a new user. Tests should exercise querying, mutation, error handling (missing name) and verify that the schema resolves correctly.",
+    "input_scaffold": "// Use Apollo Server's testClient or ApolloServerTesting library.\n// Mock database calls if needed.",
+    "evaluation_prompt": "Review the GraphQL API integration tests. Are the queries and mutations tested comprehensively? Do the tests assert the structure of responses and handle errors correctly? Evaluate readability, use of testing utilities and code quality. Provide scores and comments."
+  }
+]

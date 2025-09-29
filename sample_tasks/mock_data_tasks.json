@@ -1,0 +1,8 @@
+[
+  {
+    "name": "user_profiles",
+    "description": "Generate a JSON array of 5 user profiles for a social media application. Each profile should include a username, display name, bio (1–2 sentences), follower count and join date. The data should be realistic but not copied from real people and must not contain identifiable information.",
+    "input_scaffold": "The output should be valid JSON.\nFollower counts should be integers. Join dates should be ISO 8601 strings.",
+    "evaluation_prompt": "You are tasked with evaluating a set of synthetic user profiles. Are the profiles varied and plausible? Do they avoid using real names or PII? Assess realism, diversity and privacy considerations. Score each category out of 10 and provide feedback."
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "name": "python_math_utils_unit_tests",
+    "description": "Write unit tests for a small Python math utilities module. The module exposes functions is_prime(n: int) -> bool and gcd(a: int, b: int) -> int. Create tests that cover edge cases, typical cases, and invalid inputs (e.g., negative numbers). Use pytest style with parametrize where appropriate.",
+    "input_scaffold": "Assume the implementations exist in math_utils.py with functions is_prime and gcd.\n# Write tests in test_math_utils.py using pytest.\n# Import with: from math_utils import is_prime, gcd",
+    "evaluation_prompt": ""
+  }
+]

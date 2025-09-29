@@ -1,0 +1,8 @@
+[
+  {
+    "name": "responsive_login_form",
+    "description": "Create a responsive React login form with email and password fields. Implement client‑side validation for required fields, email format, and minimum password length. Display clear error messages. Use ARIA attributes for accessibility and ensure the form adapts well to mobile and desktop screen sizes.",
+    "input_scaffold": "// You may import useState and useEffect from react.\n// The component should return valid JSX.",
+    "evaluation_prompt": "You are an expert software test engineer. Evaluate the following unit test code. Does it effectively test the intended functionality? Assess coverage (branches, edge cases, error conditions), structure (clear Arrange-Act-Assert, descriptive naming, readability), reliability (deterministic, no flakiness or hidden dependencies), isolation & mocking (appropriate stubs, no over- or under-mocking), maintainability (reuse of helpers/fixtures, minimal duplication), and error/async handling (exceptions, rejected promises, failure paths). Provide a score out of 10 for each criterion and a brief justification."
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "name": "login_flow",
+    "description": "Write an end‑to‑end test for the login flow of a sample web application. The test should navigate to the login page, enter a valid username and password, submit the form and verify that the user is redirected to the dashboard. Include a negative test case with incorrect credentials that checks for an error message.",
+    "input_scaffold": "",
+    "evaluation_prompt": "You are a QA engineer reviewing an E2E test for a login flow. Does the test correctly navigate, interact with form fields, handle asynchronous waits and assert on both success and failure? Evaluate the use of selectors, handling of fixtures and code structure. Score the test for completeness, reliability and readability."
+  }
+]

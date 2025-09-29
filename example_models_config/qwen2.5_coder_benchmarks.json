@@ -1,0 +1,144 @@
+{
+  "defaults": {
+    "tasks_dir": "",
+    "output_dir": "",
+    "results_dir": ""
+  },
+  "benchmarks": [
+    {
+      "name": "end_to_end_test",
+      "module": "packages.code_score_lib.benchmarks.derived.end_to_end_test_benchmark",
+      "benchmark_class": "EndToEndTestBenchmark",
+      "config_class": "EndToEndConfig",
+      "kind": "dspy",
+      "enabled": true,
+      "params": {
+        "name": "end_to_end_test",
+        "output_dir": "outputs",
+        "tasks_file": "end_to_end_tasks.json",
+        "judge_llm_model": "",
+        "judge_llm_base_url": "",
+        "judge_llm_api_key": "",
+        "subject_llm_model": "",
+        "subject_llm_base_url": "",
+        "subject_llm_api_key": "",
+        "env": {}
+      }
+    },
+    {
+      "name": "frontend",
+      "module": "packages.code_score_lib.benchmarks.derived.frontend_benchmark",
+      "benchmark_class": "FrontendBenchmark",
+      "config_class": "FrontendConfig",
+      "kind": "dspy",
+      "enabled": true,
+      "params": {
+        "name": "frontend",
+        "output_dir": "outputs",
+        "tasks_file": "frontend_tasks.json",
+        "judge_llm_model": "",
+        "judge_llm_base_url": "",
+        "judge_llm_api_key": "",
+        "subject_llm_model": "",
+        "subject_llm_base_url": "",
+        "subject_llm_api_key": "",
+        "env": {}
+      }
+    },
+    {
+      "name": "unit_test",
+      "module": "packages.code_score_lib.benchmarks.derived.unit_test_benchmark",
+      "benchmark_class": "UnitTestBenchmark",
+      "config_class": "UnitTestConfig",
+      "kind": "dspy",
+      "enabled": true,
+      "params": {
+        "name": "unit_test",
+        "output_dir": "outputs",
+        "tasks_file": "unnit_tasks.json",
+        "judge_llm_model": "",
+        "judge_llm_base_url": "",
+        "judge_llm_api_key": "",
+        "subject_llm_model": "",
+        "subject_llm_base_url": "",
+        "subject_llm_api_key": "",
+        "env": {}
+      }
+    },
+    {
+      "name": "integration_test",
+      "module": "packages.code_score_lib.benchmarks.derived.integration_test_benchmark",
+      "benchmark_class": "IntegrationTestBenchmark",
+      "config_class": "IntegrationConfig",
+      "kind": "dspy",
+      "enabled": true,
+      "params": {
+        "name": "integration_test",
+        "output_dir": "outputs",
+        "tasks_file": "integration_tasks.json",
+        "judge_llm_model": "",
+        "judge_llm_base_url": "",
+        "judge_llm_api_key": "",
+        "subject_llm_model": "",
+        "subject_llm_base_url": "",
+        "subject_llm_api_key": "",
+        "env": {}
+      }
+    },
+    {
+      "name": "mock_data_generation",
+      "module": "packages.code_score_lib.benchmarks.derived.mock_data_generation_benchmark",
+      "benchmark_class": "MockDataGenerationBenchmark",
+      "config_class": "MockDataConfig",
+      "kind": "dspy",
+      "enabled": true,
+      "params": {
+        "name": "mock_data_generation",
+        "output_dir": "outputs",
+        "tasks_file": "mock_data_tasks.json",
+        "judge_llm_model": "",
+        "judge_llm_base_url": "",
+        "judge_llm_api_key": "",
+        "subject_llm_model": "",
+        "subject_llm_base_url": "",
+        "subject_llm_api_key": "",
+        "env": {}
+      }
+    },
+    {
+      "name": "baxbench",
+      "module": "packages.code_score_lib.benchmarks.derived.baxbench_benchmark",
+      "benchmark_class": "BaxBenchBenchmark",
+      "config_class": "BaxBenchConfig",
+      "kind": "bax_bench",
+      "enabled": false,
+      "params": {
+        "name": "baxbench",
+        "output_dir": "outputs/baxbench",
+        "bench_repo_dir": "",
+        "use_pipenv": true,
+
+        "models": ["qwen2.5-coder:7b"],
+        "scenarios": ["Calculator"],
+        "envs": ["Python-FastAPI"],
+
+        "n_samples": 1,
+        "temperature": 0.4,
+        "reasoning_effort": "high",
+        "spec_type": "openapi",
+        "safety_prompt": "none",
+
+        "run_generate": true,
+        "run_test": false,
+        "run_evaluate": false,
+
+        "vllm": true,
+        "vllm_port": 11434,
+
+        "results_dir_override": "",
+
+        "env": {}
+      }
+    }
+  ]
+}
