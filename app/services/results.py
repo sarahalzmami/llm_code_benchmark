@@ -4,16 +4,20 @@ from typing import Optional, Tuple, List
 
 
 class ResultsService:
-    """Load benchmark results from a CSV path or packaged default.
+    """Load benchmark results for the UI.
 
-    - If ``results_path`` is provided and points to a file, that CSV is used.
+    Behavior (simple, flexible):
+    - If ``results_path`` points to a CSV file, use it.
+    - If it points to a directory, try to resolve the latest leaderboard CSV by:
+      1) Reading ``latest_models.json`` or ``latest.json`` for a ``csv`` field
+      2) Falling back to the newest ``*.csv`` under the directory (recursive)
+    - If not provided, fall back to the packaged sample CSV.
     """
 
     def __init__(self, results_path: Optional[Path | str] = None) -> None:
         app_root = Path(__file__).resolve().parent.parent
-        default_csv = (app_root / "data" / "leaderboard.csv").resolve()
+        self._default_csv = (app_root / "data" / "leaderboard.csv").resolve()
 
-        chosen: Optional[Path] = None
         if results_path:
             p = Path(results_path)
             if not p.is_absolute():
@@ -22,13 +26,58 @@ class ResultsService:
                 p = p.resolve()
             except Exception:
                 pass
-            if p.exists() and p.is_file():
-                chosen = p
+            self._input_path: Path = p
+        else:
+            self._input_path = self._default_csv
 
-        self.csv_path: Path = chosen or default_csv
+    def _from_manifest(self, root: Path) -> Optional[Path]:
+        """Try to read a leaderboard CSV path from manifest JSON files in ``root``."""
+        import json
+
+        for name in ("latest_models.json", "latest.json"):
+            man = root / name
+            try:
+                if man.exists():
+                    obj = json.loads(man.read_text(encoding="utf-8"))
+                    csv_val = obj.get("csv") if isinstance(obj, dict) else None
+                    if isinstance(csv_val, str) and csv_val:
+                        p = Path(csv_val)
+                        return p if p.is_absolute() else (root / p).resolve()
+            except Exception:
+                continue
+        return None
+
+    def _newest_csv_under(self, root: Path) -> Optional[Path]:
+        try:
+            candidates = list(root.rglob("*.csv"))
+        except Exception:
+            candidates = []
+        if not candidates:
+            return None
+        # Pick the most recently modified CSV
+        candidates.sort(key=lambda p: (p.stat().st_mtime if p.exists() else 0), reverse=True)
+        return candidates[0]
 
     def find_latest_csv(self) -> Optional[Path]:
-        return self.csv_path if self.csv_path.exists() else None
+        p = self._input_path
+        # Case 1: explicit CSV file path
+        if p.exists() and p.is_file() and p.suffix.lower() == ".csv":
+            return p
+        # Case 2: a manifest file path (latest.json)
+        if p.exists() and p.is_file() and p.suffix.lower() == ".json":
+            parent = p.parent
+            from_manifest = self._from_manifest(parent)
+            return from_manifest if from_manifest and from_manifest.exists() else None
+        # Case 3: a directory – try manifest then newest CSV
+        if p.exists() and p.is_dir():
+            from_manifest = self._from_manifest(p)
+            if from_manifest and from_manifest.exists():
+                return from_manifest
+            newest = self._newest_csv_under(p)
+            if newest and newest.exists():
+                return newest
+        # Fallback to the packaged sample CSV
+        return self._default_csv if self._default_csv.exists() else None
 
     def read_results(
         self, max_rows: Optional[int] = 500

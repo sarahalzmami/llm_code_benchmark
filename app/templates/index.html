@@ -71,12 +71,10 @@
                     10·0.15
                     + 7·0.05 = 8.9 → 89/100.</li>
                 <li><strong>Backend <a href="https://baxbench.com" target="_blank" rel="noopener">BaxBench</a></strong>:
-                    Normalized BaxBench composite (functionality, DB ops, auth,
-                    security) to
-                    0–100.is a benchmark of 392
-                    security-critical backend tasks (spanning multiple frameworks and languages) that evaluates
-                    LLM-generated backends for functionality and security using end-to-end tests and automated
-                    exploits.</li>
+                    Normalized BaxBench composite to 0–100. If raw numeric metrics are unavailable,
+                    we map run status to score for clarity: <em>success → 100</em>, <em>failed → 0</em> (skipped → —).
+                    BaxBench evaluates 392 security‑critical backend tasks (multiple frameworks/languages) using
+                    end‑to‑end tests and automated exploits.</li>
                 <li><strong>Unit Tests (LLM-judge)</strong>: Weights — Functionality 35%, Code quality 25%, Security
                     10%,
                     Performance 20%, Error handling 10%.</li>

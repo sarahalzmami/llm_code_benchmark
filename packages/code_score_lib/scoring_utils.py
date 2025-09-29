@@ -45,14 +45,46 @@ def weighted_llm_judge_score(obj: Any, weights: Dict[str, float]) -> Optional[fl
 
 def baxbench_score(index_obj: Any, bax_obj: Any) -> Optional[float]:
     """
-    Compute a backend score from BaxBench outputs. If numeric values are present,
-    averages them and scales into 0–100. Otherwise falls back to index.json status.
+    Compute a backend score from BaxBench outputs.
+
+    Heuristics (simple, shippable):
+    - If the baxbench.json object contains numeric values, average them and scale
+      into 0–100 (treat 0–1 as fraction, otherwise clamp to 0–100).
+    - Otherwise, fall back to run status:
+        • If index.json contains a result with name "baxbench":
+            - status == "success" → 100.0
+            - status == "failed"  → 0.0
+            - status == "skipped" → None
+        • If no index is available (e.g., combined leaderboard), treat the
+          presence of a "results_dir" field in baxbench.json as success → 100.0.
     """
     if isinstance(bax_obj, dict):
         numeric_vals = [v for v in bax_obj.values() if isinstance(v, (int, float))]
         if numeric_vals:
             avg = sum(numeric_vals) / len(numeric_vals)
             return avg * 100.0 if 0.0 <= avg <= 1.0 else min(100.0, max(0.0, avg))
+
+    # Fallback to status in index.json (when available)
+    if isinstance(index_obj, dict):
+        results = index_obj.get("results")
+        if isinstance(results, list):
+            for item in results:
+                try:
+                    if str(item.get("name")) == "baxbench":
+                        status = str(item.get("status") or "").lower()
+                        if status == "success":
+                            return 100.0
+                        if status == "failed":
+                            return 0.0
+                        # skipped/unknown → None
+                        return None
+                except Exception:
+                    continue
+
+    # Last resort for combined runs: baxbench.json with a results_dir implies success
+    if isinstance(bax_obj, dict) and bax_obj.get("results_dir"):
+        return 100.0
+
     return None
 
 
